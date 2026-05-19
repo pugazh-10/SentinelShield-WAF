@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>SentinelShield Dashboard</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+
+        body{
+            font-family: Arial, sans-serif;
+            background:#f4f4f4;
+            margin:20px;
+        }
+
+        h1{
+            color:#222;
+        }
+
+        .card{
+            background:white;
+            padding:20px;
+            margin-bottom:20px;
+            border-radius:10px;
+            box-shadow:0px 0px 5px rgba(0,0,0,0.2);
+        }
+
+        table{
+            width:100%;
+            border-collapse: collapse;
+        }
+
+        table, th, td{
+            border:1px solid #ccc;
+        }
+
+        th, td{
+            padding:10px;
+            text-align:left;
+        }
+
+        th{
+            background:#333;
+            color:white;
+        }
+
+        .high{
+            color:orange;
+            font-weight:bold;
+        }
+
+        .critical{
+            color:red;
+            font-weight:bold;
+        }
+
+        .medium{
+            color:blue;
+            font-weight:bold;
+        }
+
+        marquee{
+            color:red;
+            font-weight:bold;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <h1>SentinelShield Security Dashboard</h1>
+
+    <!-- SECURITY STATUS -->
+
+    <div class="card">
+
+        <h2>Security Status</h2>
+
+        <p>
+            SentinelShield is actively monitoring incoming traffic,
+            detecting malicious payloads,
+            and blocking suspicious activity.
+        </p>
+
+    </div>
+
+    <!-- ALERT BANNER -->
+
+    <div class="card">
+
+        <h2>Active Security Alerts</h2>
+
+        <marquee>
+            SentinelShield is actively blocking malicious requests and monitoring suspicious traffic.
+        </marquee>
+
+    </div>
+
+    <!-- TOTAL ATTACKS -->
+
+    <div class="card">
+
+        <h2>Total Attacks Detected</h2>
+
+        <h3>{{ total_attacks }}</h3>
+
+    </div>
+
+    <!-- ATTACK DISTRIBUTION -->
+
+    <div class="card">
+
+        <h2>Attack Type Distribution</h2>
+
+        <ul>
+
+            {% for attack, count in attack_counts.items() %}
+
+                <li>{{ attack }} : {{ count }}</li>
+
+            {% endfor %}
+
+        </ul>
+
+    </div>
+
+    <!-- PIE CHART -->
+
+    <div class="card">
+
+        <h2>Attack Analytics</h2>
+
+        <canvas id="attackChart"></canvas>
+
+    </div>
+
+    <!-- TOP ATTACKER IPS -->
+
+    <div class="card">
+
+        <h2>Top Attacker IPs</h2>
+
+        <ul>
+
+            {% for ip, count in ip_counts.items() %}
+
+                <li>{{ ip }} : {{ count }}</li>
+
+            {% endfor %}
+
+        </ul>
+
+    </div>
+
+    <!-- RECENT LOGS -->
+
+    <div class="card">
+
+        <h2>Recent Attack Logs</h2>
+
+        <table>
+
+            <tr>
+                <th>Timestamp</th>
+                <th>IP</th>
+                <th>Attack Type</th>
+            </tr>
+
+            {% for log in logs %}
+
+            <tr>
+
+                <td>{{ log.timestamp }}</td>
+
+                <td>{{ log.ip }}</td>
+
+                <td>
+
+                    {{ log.attack_type }}
+
+                    {% if log.severity %}
+
+                        <span class="
+                            {% if log.severity == 'HIGH' %}
+                                high
+                            {% elif log.severity == 'CRITICAL' %}
+                                critical
+                            {% else %}
+                                medium
+                            {% endif %}
+                        ">
+                            ({{ log.severity }})
+                        </span>
+
+                    {% endif %}
+
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </table>
+
+    </div>
+
+    <!-- CHART JS -->
+<script>
+
+const attackLabels = [
+    "SQL Injection",
+    "XSS Attack",
+    "Directory Traversal",
+    "Rate Limit Exceeded"
+];
+
+const attackData = [1, 1, 1, 1];
+
+const ctx = document.getElementById('attackChart').getContext('2d');
+
+new Chart(ctx, {
+
+    type: 'pie',
+
+    data: {
+
+        labels: attackLabels,
+
+        datasets: [{
+
+            data: attackData,
+
+            backgroundColor: [
+                '#ff6384',
+                '#36a2eb',
+                '#ffce56',
+                '#4bc0c0'
+            ]
+
+        }]
+
+    }
+
+});
+
+</script>
+
+</body>
+
+</html>
