@@ -12,6 +12,10 @@
 
 ![XSS](screenshots/xss_detection.png)
 
+### Rate Limiting Protection
+
+![Rate Limit](screenshots/rate_limit.png)
+
 ### Security Logs Monitoring
 
 ![Logs](screenshots/logs.png)
