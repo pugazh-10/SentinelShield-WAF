@@ -1,14 +1,16 @@
 from datetime import datetime
+import pytz
 import os
 
 LOG_FILE = "logs/attacks.log"
-
 
 def log_attack(attack_data):
 
     os.makedirs("logs", exist_ok=True)
 
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    india = pytz.timezone('Asia/Kolkata')
+
+    timestamp = datetime.now(india).strftime("%Y-%m-%d %H:%M:%S")
 
     log_entry = (
         f"{timestamp} | "
