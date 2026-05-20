@@ -1,109 +1,130 @@
-from flask import Flask, request, jsonify, render_template
-
-from detector.analyzer import detect_attack
+from flask import Flask, request, jsonify, render_template, redirect
+from detector.signatures import detect_attack
 from logger.logger import log_attack
 from limiter.rate_limiter import is_rate_limited
-
-import json
 from collections import Counter
+import os
 
 app = Flask(__name__)
 
-LOG_FILE = "logs/attacks.log"
-
-
+# -----------------------------
+# HOME ROUTE
+# Redirect directly to dashboard
+# -----------------------------
 @app.route("/")
 def home():
-    return "SentinelShield WAF Running"
+    return redirect("/dashboard")
 
 
-@app.route("/inspect", methods=["GET", "POST"])
-def inspect_request():
+# -----------------------------
+# REQUEST INSPECTION ROUTE
+# -----------------------------
+@app.route("/inspect")
+def inspect():
 
     ip = request.remote_addr
-
-    request_data = {
-        "ip": ip,
-        "method": request.method,
-        "url": request.url,
-        "headers": dict(request.headers),
-        "args": request.args.to_dict(),
-        "body": request.get_data(as_text=True)
-    }
 
     # RATE LIMIT CHECK
     if is_rate_limited(ip):
 
-        log_attack(
-            ip=ip,
-    attack_type="Rate Limit Exceeded",
-    severity="MEDIUM",
-    payload=request_data
-        )
+        attack_data = {
+            "ip": ip,
+            "attack_type": "Rate Limit Exceeded",
+            "severity": "HIGH"
+        }
+
+        log_attack(attack_data)
 
         return jsonify({
-            "status": "BLOCKED",
-            "reason": "Too many requests"
+            "status": "blocked",
+            "reason": "Rate limit exceeded"
         }), 429
 
-    # ATTACK DETECTION
-    attack = detect_attack(request_data)
+    # GET FULL REQUEST INPUT
+    data = request.query_string.decode()
+
+    # DETECT ATTACK
+    attack = detect_attack(data)
 
     if attack:
 
-        log_attack(
-           ip=ip,
-        attack_type=attack["type"],
-        severity=attack["severity"],
-        payload=request_data
-    )
+        attack_data = {
+            "ip": ip,
+            "attack_type": attack["type"],
+            "severity": attack["severity"]
+        }
+
+        log_attack(attack_data)
+
+        return jsonify({
+            "status": "blocked",
+            "attack": attack
+        }), 403
 
     return jsonify({
-        "status": "BLOCKED",
-        "attack_type": attack["type"],
-        "severity": attack["severity"]
-    }), 403
-
-    return jsonify({
-        "status": "SAFE"
+        "status": "safe",
+        "message": "No threats detected"
     })
 
 
+# -----------------------------
+# DASHBOARD ROUTE
+# -----------------------------
 @app.route("/dashboard")
 def dashboard():
 
     logs = []
 
-    try:
+    attack_counts = Counter()
+    ip_counts = Counter()
 
-        with open(LOG_FILE, "r") as file:
+    log_file = "logs/attacks.log"
 
-            for line in file:
-                logs.append(json.loads(line))
+    if os.path.exists(log_file):
 
-    except FileNotFoundError:
-        pass
+        with open(log_file, "r") as file:
+
+            for line in file.readlines():
+
+                try:
+
+                    parts = line.strip().split(" | ")
+
+                    timestamp = parts[0]
+                    ip = parts[1]
+                    attack_type = parts[2]
+                    severity = parts[3]
+
+                    log_entry = {
+                        "timestamp": timestamp,
+                        "ip": ip,
+                        "attack_type": attack_type,
+                        "severity": severity
+                    }
+
+                    logs.append(log_entry)
+
+                    attack_counts[attack_type] += 1
+                    ip_counts[ip] += 1
+
+                except:
+                    pass
 
     total_attacks = len(logs)
 
-    attack_counts = Counter(
-        log["attack_type"] for log in logs
-    )
-
-    ip_counts = Counter(
-        log["ip"] for log in logs
-    )
-
-    logs = list(reversed(logs[-10:]))
+    logs.reverse()
 
     return render_template(
         "dashboard.html",
+        logs=logs,
         total_attacks=total_attacks,
         attack_counts=attack_counts,
-        ip_counts=ip_counts,
-        logs=logs
+        ip_counts=ip_counts
     )
 
 
+# -----------------------------
+# MAIN
+# -----------------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=True)
