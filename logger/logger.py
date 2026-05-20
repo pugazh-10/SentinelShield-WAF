@@ -1,18 +1,21 @@
-import json
 from datetime import datetime
+import os
 
 LOG_FILE = "logs/attacks.log"
 
 
-def log_attack(ip, attack_type, severity, payload):
+def log_attack(attack_data):
 
-    log_entry = {
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "ip": ip,
-        "attack_type": attack_type,
-        "severity": severity,
-        "payload": str(payload)
-    }
+    os.makedirs("logs", exist_ok=True)
+
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    log_entry = (
+        f"{timestamp} | "
+        f"{attack_data['ip']} | "
+        f"{attack_data['attack_type']} | "
+        f"{attack_data['severity']}\n"
+    )
 
     with open(LOG_FILE, "a") as file:
-        file.write(json.dumps(log_entry) + "\n")
+        file.write(log_entry)
