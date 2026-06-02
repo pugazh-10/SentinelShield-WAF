@@ -88,7 +88,7 @@ SOC Dashboard
 
 ## 🔥 SQL Injection Detection
 
-![SQL Injection](screenshots/sqli_detection.png)
+![SQL Injection](screenshots/sql_injection.png)
 
 ---
 
